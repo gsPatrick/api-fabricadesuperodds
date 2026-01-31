@@ -59,8 +59,9 @@ class UserController {
                 expires_at: expiresAt
             });
 
-            // Construct Link
-            const botUser = process.env.BOT_USERNAME || 'FabricaSuperOddsBot';
+            // Construct Link dynamically using getMe to avoid hardcoding errors
+            const botInfo = await require('../../features/bot/bot.service').bot.telegram.getMe();
+            const botUser = botInfo.username;
             const link = `https://t.me/${botUser}?start=${invite.token}`;
 
             res.json({ link, token: invite.token, expires_at: expiresAt, name: invite.name });
