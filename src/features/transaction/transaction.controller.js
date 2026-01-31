@@ -84,6 +84,16 @@ class TransactionController {
             res.status(500).json({ error: error.message });
         }
     }
+
+    async getHistory(req, res) {
+        try {
+            const { user_id_telegram } = req.params;
+            const history = await TransactionService.getHistoryJSON(user_id_telegram);
+            res.json(history);
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    }
 }
 
 module.exports = new TransactionController();

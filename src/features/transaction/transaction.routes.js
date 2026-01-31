@@ -6,5 +6,6 @@ const TransactionController = require('./transaction.controller');
 router.post('/', TransactionController.createTransaction);
 router.get('/balance/:user_id_telegram', TransactionController.getBalance);
 router.get('/report/:user_id_telegram', TransactionController.getReport);
+router.get('/history/:user_id_telegram', TransactionController.getHistory);
 
 module.exports = router;

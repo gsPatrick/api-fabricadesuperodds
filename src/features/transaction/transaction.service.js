@@ -62,7 +62,16 @@ class TransactionService {
         report += `Saldo Total no Período: R$ ${balance.toFixed(2)}`;
 
         return report;
-        // Could also return JSON object if needed, but prompt says "formatado de forma legível (texto simples or CSV)".
+    }
+
+    async getHistoryJSON(user_id_telegram) {
+        const transactions = await Transaction.findAll({
+            where: { user_id_telegram },
+            order: [['date', 'DESC']],
+            limit: 50
+        });
+        const balance = await this.getBalance(user_id_telegram);
+        return { transactions, balance };
     }
 }
 
