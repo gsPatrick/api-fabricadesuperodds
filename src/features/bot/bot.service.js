@@ -86,8 +86,11 @@ class BotService {
         });
 
         // Launch bot (polling)
-        // Note: In production with webhook, this is different, but for this setup polling is fine/safe.
-        this.bot.launch().catch(err => console.error('Bot launch failed:', err));
+        // Safety: Delete any existing webhook before starting polling (fixes 409 Conflict)
+        this.bot.telegram.deleteWebhook().then(() => {
+            this.bot.launch().catch(err => console.error('Bot launch failed:', err));
+            console.log('Bot is polling for updates...');
+        });
 
         // Graceful stop
         process.once('SIGINT', () => this.bot.stop('SIGINT'));
