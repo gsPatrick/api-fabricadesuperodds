@@ -5,8 +5,8 @@ const transactionRoutes = require('../features/transaction/transaction.routes');
 
 // Middleware for Admin Authentication
 const adminAuth = (req, res, next) => {
-    // Allow login route
-    if (req.path === '/admin/users/login') return next();
+    // Allow login route (relative to /admin/users mount)
+    if (req.path === '/login') return next();
 
     // Check header for token/secret
     // In our simple case, we check if x-admin-token matches our hardcoded "admin-session-token-12345"
