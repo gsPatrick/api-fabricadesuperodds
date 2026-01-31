@@ -141,10 +141,27 @@ class BotService {
                     console.log(`[Transaction] Salvando no banco...`);
                     await TransactionService.createTransaction(fromId, finalAmount, text, type);
 
-                    const newBalance = await TransactionService.getBalance(fromId);
                     console.log(`[Transaction] Sucesso! Novo saldo: ${newBalance}`);
 
-                    ctx.reply(`✅ Registrado: R$ ${amount.toFixed(2)} (${isExpense ? 'Gasto' : 'Ganho'})\n💰 Novo Saldo: R$ ${newBalance.toFixed(2)}`);
+                    const now = new Date();
+                    const dateStr = now.toLocaleDateString('pt-BR');
+                    const timeStr = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+                    const responseMsg = isExpense
+                        ? `📉 **Gasto Registrado**\n\n` +
+                        `💰 **Valor:** -R$ ${amount.toFixed(2)}\n` +
+                        `📝 **Descrição:** ${text}\n` +
+                        `⏰ **Horário:** ${dateStr} às ${timeStr}\n\n` +
+                        `🏦 **Saldo Atual:** R$ ${newBalance.toFixed(2)}\n\n` +
+                        `*🚀 Fábrica de Super Odds*`
+                        : `📈 **Ganho Registrado**\n\n` +
+                        `💰 **Valor:** +R$ ${amount.toFixed(2)}\n` +
+                        `📝 **Descrição:** ${text}\n` +
+                        `⏰ **Horário:** ${dateStr} às ${timeStr}\n\n` +
+                        `🏦 **Saldo Atual:** R$ ${newBalance.toFixed(2)}\n\n` +
+                        `*🚀 Fábrica de Super Odds*`;
+
+                    ctx.replyWithMarkdown(responseMsg);
                 } catch (error) {
                     console.error(`[Transaction] Erro ao salvar:`, error.message);
                     ctx.reply('❌ Erro ao salvar transação.');
