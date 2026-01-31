@@ -92,17 +92,17 @@ class BotService {
         });
 
         // Command: Help / Instructions
-        this.bot.hears(['📝 Como Registrar?', '/ajuda'], (ctx) => {
+        this.bot.hears([/📝 Como Registrar\?/i, /^\/ajuda$/i, /^ajuda$/i], (ctx) => {
             const helpMsg = `📖 **Guia de Comandos**\n\n` +
                 `✅ **Registrar Ganho:**\n"ganhei 100", "+50", "recebi 30", "lucro 10"\n\n` +
                 `❌ **Registrar Gasto:**\n"gastei 50", "-20", "perdi 10", "paguei 80", "despesa 15"\n\n` +
-                `💰 **Consultar Saldo:** Clique no botão de saldo ou digite /saldo\n\n` +
-                `📊 **Relatório:** Clique no botão de relatório ou digite /relatorio`;
-            ctx.replyWithMarkdown(helpMsg);
+                `💰 **Consultar Saldo:** Clique no botão de saldo ou digite **saldo**\n\n` +
+                `📊 **Relatório:** Clique no botão de relatório ou digite **relatorio**`;
+            ctx.replyWithMarkdown(helpMsg, this.getMainMenu());
         });
 
         // Command: Balance
-        this.bot.hears(['💰 Meu Saldo', '/saldo', 'saldo'], async (ctx) => {
+        this.bot.hears([/💰 Meu Saldo/i, /^\/saldo$/i, /^saldo$/i], async (ctx) => {
             const fromId = ctx.from.id;
             try {
                 const TransactionService = require('../transaction/transaction.service');
@@ -121,7 +121,7 @@ class BotService {
         });
 
         // Command: Monthly Report
-        this.bot.hears(['📊 Relatório Mensal', '/relatorio', 'relatorio'], async (ctx) => {
+        this.bot.hears([/📊 Relatório Mensal/i, /^\/relatorio$/i, /^relatorio$/i], async (ctx) => {
             const fromId = ctx.from.id;
             try {
                 const TransactionService = require('../transaction/transaction.service');
@@ -140,7 +140,7 @@ class BotService {
 
         // Action: Inline Report Callback
         this.bot.action('get_report', async (ctx) => {
-            ctx.answerCbQuery();
+            await ctx.answerCbQuery().catch(() => { });
             const fromId = ctx.from.id;
             const TransactionService = require('../transaction/transaction.service');
             const now = new Date();
@@ -190,6 +190,9 @@ class BotService {
                     console.error('Save error:', error.message);
                     ctx.reply('❌ Erro ao salvar transação.');
                 }
+            } else {
+                // Fallback for unrecognized text
+                ctx.reply('🤔 Não entendi. Use os botões do teclado ou digite algo como "gastei 50" ou "saldo".', this.getMainMenu());
             }
         });
 
