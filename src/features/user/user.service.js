@@ -84,7 +84,7 @@ class UserService {
             let username = id_telegramOrUsername.replace('@', '');
             user = await User.findOne({ where: { username } });
             if (!user) {
-                throw new Error("Cannot pre-authorize by username alone if user has never interacted (ID unknown). Please provide Telegram ID.");
+                throw new Error("Usuário não encontrado. Se ele nunca iniciou o bot, é necessário informar o ID Numérico do Telegram, pois o @username não é suficiente para criar o registro.");
             }
         }
 
