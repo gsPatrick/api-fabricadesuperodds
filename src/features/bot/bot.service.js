@@ -110,7 +110,7 @@ class BotService {
 
                 const balanceMsg = `🏦 **Extrato Atual**\n\n` +
                     `💰 **Saldo Geral:** R$ ${balance.toFixed(2)}\n\n` +
-                    `*Status: Em dia ✅*`;
+                    `*Status: ${balance >= 0 ? 'Em dia ✅' : 'Atenção ⚠️'}*`;
 
                 ctx.replyWithMarkdown(balanceMsg, Markup.inlineKeyboard([
                     [Markup.button.callback('📊 Ver Relatório Mensal', 'get_report')]
