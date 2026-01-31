@@ -7,6 +7,10 @@ module.exports = (sequelize) => {
             defaultValue: DataTypes.UUIDV4,
             primaryKey: true
         },
+        name: {
+            type: DataTypes.STRING,
+            allowNull: true
+        },
         days: {
             type: DataTypes.INTEGER,
             defaultValue: 30

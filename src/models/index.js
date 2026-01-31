@@ -1,3 +1,6 @@
+const sequelize = require('../config/database');
+const User = require('./user');
+const Transaction = require('./transaction');
 const Invite = require('./invite')(sequelize);
 
 // Define associations
