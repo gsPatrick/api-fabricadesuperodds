@@ -1,4 +1,3 @@
-```javascript
 const { Telegraf, Markup } = require('telegraf');
 require('dotenv').config();
 
@@ -25,20 +24,20 @@ class BotService {
         // Logging Middleware
         this.bot.use(async (ctx, next) => {
             const start = Date.now();
-            console.log(`-- - Mensagem Recebida-- - `);
-            console.log(`De: ${ ctx.from?.first_name } (@${ ctx.from?.username })[${ ctx.from?.id }]`);
-            console.log(`Texto: ${ ctx.message?.text || '(Sem texto)' } `);
-            
+            console.log(`--- Mensagem Recebida ---`);
+            console.log(`De: ${ctx.from?.first_name} (@${ctx.from?.username}) [${ctx.from?.id}]`);
+            console.log(`Texto: ${ctx.message?.text || '(Sem texto)'}`);
+
             try {
                 await next();
             } catch (err) {
-                console.error(`❌ Erro no processamento: `, err.message);
+                console.error(`❌ Erro no processamento:`, err.message);
                 ctx.reply('Desculpe, ocorreu um erro interno.');
             }
-            
+
             const ms = Date.now() - start;
-            console.log(`Processado em ${ ms } ms`);
-            console.log(`------------------------- `);
+            console.log(`Processado em ${ms}ms`);
+            console.log(`-------------------------`);
         });
 
         // Handle /start <token>
@@ -82,7 +81,7 @@ class BotService {
                 await invite.save();
 
                 const formattedDate = endDate.toLocaleDateString('pt-BR');
-                const welcomeMsg = `🎯 ** Acesso Liberado! **\n\nOlá ${ invite.name || '' }, seu acesso à ** Fábrica de Super Odds ** está ativo até ${ formattedDate }.\n\nPara começar, basta digitar seus ganhos ou gastos: \nEx: "ganhei 100" ou "paguei 50"`;
+                const welcomeMsg = `🎯 **Acesso Liberado!**\n\nOlá ${invite.name || ''}, seu acesso à **Fábrica de Super Odds** está ativo até ${formattedDate}.\n\nPara começar, basta digitar seus ganhos ou gastos:\nEx: "ganhei 100" ou "paguei 50"`;
 
                 await ctx.replyWithMarkdown(welcomeMsg, this.getMainMenu());
 
@@ -94,11 +93,11 @@ class BotService {
 
         // Command: Help / Instructions
         this.bot.hears(['📝 Como Registrar?', '/ajuda'], (ctx) => {
-            const helpMsg = `📖 ** Guia de Comandos **\n\n` +
-                `✅ ** Registrar Ganho:**\n"ganhei 100", "+50", "recebi 30"\n\n` +
-                `❌ ** Registrar Gasto:**\n"gastei 50", "-20", "perdi 10"\n\n` +
-                `💰 ** Consultar Saldo:** Clique no botão de saldo ou digite / saldo\n\n` +
-                `📊 ** Relatório:** Clique no botão de relatório ou digite / relatorio`;
+            const helpMsg = `📖 **Guia de Comandos**\n\n` +
+                `✅ **Registrar Ganho:**\n"ganhei 100", "+50", "recebi 30", "lucro 10"\n\n` +
+                `❌ **Registrar Gasto:**\n"gastei 50", "-20", "perdi 10", "paguei 80", "despesa 15"\n\n` +
+                `💰 **Consultar Saldo:** Clique no botão de saldo ou digite /saldo\n\n` +
+                `📊 **Relatório:** Clique no botão de relatório ou digite /relatorio`;
             ctx.replyWithMarkdown(helpMsg);
         });
 
@@ -108,11 +107,11 @@ class BotService {
             try {
                 const TransactionService = require('../transaction/transaction.service');
                 const balance = await TransactionService.getBalance(fromId);
-                
-                const balanceMsg = `🏦 ** Extrato Atual **\n\n` +
-                    `💰 ** Saldo Geral:** R$ ${ balance.toFixed(2) } \n\n` +
-                    `* Status: Em dia ✅* `;
-                
+
+                const balanceMsg = `🏦 **Extrato Atual**\n\n` +
+                    `💰 **Saldo Geral:** R$ ${balance.toFixed(2)}\n\n` +
+                    `*Status: Em dia ✅*`;
+
                 ctx.replyWithMarkdown(balanceMsg, Markup.inlineKeyboard([
                     [Markup.button.callback('📊 Ver Relatório Mensal', 'get_report')]
                 ]));
@@ -128,11 +127,11 @@ class BotService {
                 const TransactionService = require('../transaction/transaction.service');
                 const now = new Date();
                 const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-                
+
                 const report = await TransactionService.generateReport(fromId, startOfMonth, now);
-                
-                const reportMsg = `📊 ** Relatório do Mês(${ now.toLocaleString('pt-BR', { month: 'long' }) }) **\n\n${ report } \n\n * Relatório gerado em ${ now.toLocaleString('pt-BR') }* `;
-                
+
+                const reportMsg = `📊 **Relatório do Mês (${now.toLocaleString('pt-BR', { month: 'long' })})**\n\n${report}\n\n*Relatório gerado em ${now.toLocaleString('pt-BR')}*`;
+
                 ctx.replyWithMarkdown(reportMsg);
             } catch (error) {
                 ctx.reply('Erro ao gerar relatório.');
@@ -147,7 +146,7 @@ class BotService {
             const now = new Date();
             const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
             const report = await TransactionService.generateReport(fromId, startOfMonth, now);
-            ctx.replyWithMarkdown(`📊 ** Relatório Mensal **\n\n${ report } `);
+            ctx.replyWithMarkdown(`📊 **Relatório Mensal**\n\n${report}`);
         });
 
         // General Text Handling (Transactions)
@@ -179,13 +178,13 @@ class BotService {
                     const timeStr = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
                     const responseMsg = (isExpense ? '📉 **Gasto Registrado**' : '📈 **Ganho Registrado**') +
-                        `\n\n💰 ** Valor:** ${ isExpense ? '-' : '+' }R$ ${ amount.toFixed(2) } \n` +
-                        `📝 ** Descrição:** ${ text } \n` +
-                        `⏰ ** Horário:** ${ dateStr } às ${ timeStr } \n\n` +
-                        `🏦 ** Saldo Atual:** R$ ${ newBalance.toFixed(2) } `;
+                        `\n\n💰 **Valor:** ${isExpense ? '-' : '+'}R$ ${amount.toFixed(2)}\n` +
+                        `📝 **Descrição:** ${text}\n` +
+                        `⏰ **Horário:** ${dateStr} às ${timeStr}\n\n` +
+                        `🏦 **Saldo Atual:** R$ ${newBalance.toFixed(2)}`;
 
                     ctx.replyWithMarkdown(responseMsg, Markup.inlineKeyboard([
-                        [Markup.button.callback('� Ver Relatório', 'get_report')]
+                        [Markup.button.callback('📊 Ver Relatório', 'get_report')]
                     ]));
                 } catch (error) {
                     console.error('Save error:', error.message);
@@ -198,30 +197,29 @@ class BotService {
         const WEBHOOK_PATH = '/api/bot-webhook';
         const WEBHOOK_URL = `https://geral-fabricadesuperodssapi.r954jc.easypanel.host${WEBHOOK_PATH}`;
 
-this.bot.telegram.setWebhook(WEBHOOK_URL).then(() => {
-    console.log(`✅ Webhook set to: ${WEBHOOK_URL}`);
-}).catch(err => console.error('❌ Failed to set webhook:', err.message));
+        this.bot.telegram.setWebhook(WEBHOOK_URL).then(() => {
+            console.log(`✅ Webhook set to: ${WEBHOOK_URL}`);
+        }).catch(err => console.error('❌ Failed to set webhook:', err.message));
 
-// Graceful stop
-process.once('SIGINT', () => this.bot.stop('SIGINT'));
-process.once('SIGTERM', () => this.bot.stop('SIGTERM'));
+        // Graceful stop
+        process.once('SIGINT', () => this.bot.stop('SIGINT'));
+        process.once('SIGTERM', () => this.bot.stop('SIGTERM'));
     }
 
-getWebhookCallback() {
-    return this.bot.webhookCallback('/api/bot-webhook');
-}
+    getWebhookCallback() {
+        return this.bot.webhookCallback('/api/bot-webhook');
+    }
 
     async sendNotification(userId, message) {
-    if (!this.bot) return false;
-    try {
-        await this.bot.telegram.sendMessage(userId, message, { parse_mode: 'Markdown' });
-        return true;
-    } catch (error) {
-        console.error(`Failed to send notification to ${userId}:`, error.message);
-        return false;
+        if (!this.bot) return false;
+        try {
+            await this.bot.telegram.sendMessage(userId, message, { parse_mode: 'Markdown' });
+            return true;
+        } catch (error) {
+            console.error(`Failed to send notification to ${userId}:`, error.message);
+            return false;
+        }
     }
-}
 }
 
 module.exports = new BotService();
-```
