@@ -91,15 +91,27 @@ class BotService {
             }
         });
 
-        // Launch bot (polling)
-        // Safety: Delete any existing webhook before starting polling (fixes 409 Conflict)
-        this.bot.telegram.deleteWebhook().then(() => {
-            this.bot.launch({
-                allowedUpdates: [],
-                dropPendingUpdates: true
-            }).catch(err => console.error('Bot launch failed:', err));
-            console.log('Bot is polling for updates (Drop Pending Updates: ON)...');
-        });
+        // Launch bot (polling) with a delay to avoid collision during redeployments
+        console.log('Bot preparing to launch in 5 seconds...');
+        setTimeout(async () => {
+            try {
+                // Safety: Delete any existing webhook before starting polling (fixes common conflict)
+                await this.bot.telegram.deleteWebhook();
+
+                await this.bot.launch({
+                    allowedUpdates: [],
+                    dropPendingUpdates: true
+                });
+                console.log('✅ Bot is polling for updates (Drop Pending Updates: ON)');
+            } catch (err) {
+                if (err.response && err.response.error_code === 409) {
+                    console.error('❌ ERRO 409: Conflito de Instância. Já existe outro processo usando este Token.');
+                    console.error('Verifique se o bot está rodando localmente ou em outro serviço (Heroku, Render, etc).');
+                } else {
+                    console.error('❌ Bot launch failed:', err);
+                }
+            }
+        }, 5000); // 5 second safety delay
 
         // Graceful stop
         process.once('SIGINT', () => this.bot.stop('SIGINT'));
