@@ -81,7 +81,7 @@ class BotService {
                 await invite.save();
 
                 const formattedDate = endDate.toLocaleDateString('pt-BR');
-                const welcomeMsg = `🎯 **Acesso Liberado!**\n\nOlá ${invite.name || ''}, seu acesso à **Fábrica de Super Odds** está ativo até ${formattedDate}.\n\nPara começar, basta digitar seus ganhos ou gastos:\nEx: "ganhei 100" ou "paguei 50"`;
+                const welcomeMsg = `🎯 **Acesso Liberado!**\n\nOlá ${invite.name || ''}, seu acesso à **Fábrica de Super Odds** está ativo até ${formattedDate}.\n\nPara começar, basta digitar seus ganhos ou perdas:\nEx: "ganhei 100" ou "perdi 50"`;
 
                 await ctx.replyWithMarkdown(welcomeMsg, this.getMainMenu());
 
@@ -177,7 +177,7 @@ class BotService {
                     const dateStr = new Date().toLocaleDateString('pt-BR');
                     const timeStr = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
-                    const responseMsg = (isExpense ? '📉 **Gasto Registrado**' : '📈 **Ganho Registrado**') +
+                    const responseMsg = (isExpense ? '📉 **Perda Registrada**' : '📈 **Ganho Registrado**') +
                         `\n\n💰 **Valor:** ${isExpense ? '-' : '+'}R$ ${amount.toFixed(2)}\n` +
                         `📝 **Descrição:** ${text}\n` +
                         `⏰ **Horário:** ${dateStr} às ${timeStr}\n\n` +
