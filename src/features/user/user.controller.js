@@ -100,6 +100,18 @@ class UserController {
     // Internal/Bot use: Update info if needed?
     // Probably not exposed via HTTP mostly, or maybe used by Bot to sync username?
     // We'll leave it simple for now. 
+    async updateAccess(req, res) {
+        try {
+            const { id_telegram, endDate } = req.body;
+            if (!id_telegram || !endDate) {
+                return res.status(400).json({ error: "id_telegram and endDate are required" });
+            }
+            const user = await UserService.updateUserAccess(id_telegram, endDate);
+            res.json(user);
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }
+    }
 }
 
 module.exports = new UserController();

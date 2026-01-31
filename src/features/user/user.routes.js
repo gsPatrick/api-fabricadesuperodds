@@ -11,6 +11,7 @@ router.get('/', UserController.listUsers);
 router.post('/allow', UserController.allowUser);
 router.post('/invite', UserController.createInvite);
 router.post('/revoke', UserController.revokeUser);
+router.post('/update-access', UserController.updateAccess);
 router.delete('/remove', UserController.removeUser); // Or POST /remove if preferred
 
 module.exports = router;

@@ -50,10 +50,15 @@ class BotService {
                 // If user already exists and is allowed, just show menu
                 const { User } = require('../../models');
                 const user = await User.findOne({ where: { id_telegram: fromId } });
-                if (user && user.allowed) {
-                    return ctx.reply('Bem-vindo de volta! Use o menu abaixo para navegar.', this.getMainMenu());
+
+                if (!user || !user.allowed || (user.end_date && new Date() > new Date(user.end_date))) {
+                    if (user && user.allowed) {
+                        user.allowed = false;
+                        await user.save();
+                    }
+                    return ctx.reply('Olá! Este bot é privado ou seu acesso expirou. Para acessar ou renovar, você precisa de um link de convite válido.');
                 }
-                return ctx.reply('Olá! Este bot é privado. Para acessar, você precisa de um link de convite válido.');
+                return ctx.reply('Bem-vindo de volta! Use o menu abaixo para navegar.', this.getMainMenu());
             }
 
             try {
@@ -169,7 +174,13 @@ class BotService {
                     const TransactionService = require('../transaction/transaction.service');
 
                     const user = await User.findOne({ where: { id_telegram: fromId } });
-                    if (!user || !user.allowed) return ctx.reply('⚠️ Acesso não autorizado.');
+                    if (!user || !user.allowed || (user.end_date && new Date() > new Date(user.end_date))) {
+                        if (user && user.allowed) {
+                            user.allowed = false;
+                            await user.save();
+                        }
+                        return ctx.reply('⚠️ Acesso não autorizado ou expirado.');
+                    }
 
                     await TransactionService.createTransaction(fromId, finalAmount, text, type);
                     const newBalance = await TransactionService.getBalance(fromId);

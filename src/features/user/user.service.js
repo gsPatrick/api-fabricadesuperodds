@@ -135,6 +135,21 @@ class UserService {
     async updateLastInteraction(id_telegram) {
         return await User.update({ last_interaction: new Date() }, { where: { id_telegram } });
     }
+
+    async updateUserAccess(id_telegram, endDate) {
+        const user = await User.findOne({ where: { id_telegram } });
+        if (!user) throw new Error("Usuário não encontrado.");
+
+        user.end_date = endDate;
+        // If the new date is in the future, ensure it's allowed
+        if (new Date(endDate) > new Date()) {
+            user.allowed = true;
+        } else {
+            user.allowed = false;
+        }
+
+        return await user.save();
+    }
 }
 
 module.exports = new UserService();
