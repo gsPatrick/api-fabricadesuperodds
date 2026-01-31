@@ -73,11 +73,17 @@ class BotService {
                 invite.used = true;
                 await invite.save();
 
-                const welcomeMsg = invite.name
-                    ? `🎉 Olá ${invite.name}! Seu acesso foi liberado com sucesso por ${invite.days} dias.\n\nVigência até: ${endDate.toLocaleDateString()}`
-                    : `🎉 Parabéns! Seu acesso foi liberado com sucesso por ${invite.days} dias.\n\nVigência até: ${endDate.toLocaleDateString()}`;
+                const formattedDate = endDate.toLocaleDateString('pt-BR', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric'
+                });
 
-                await ctx.reply(welcomeMsg);
+                const welcomeMsg = invite.name
+                    ? `👋 **Olá, ${invite.name}!**\n\n🎯 Seu acesso à **Fábrica de Super Odds** foi liberado com sucesso!\n\n⏳ **Período:** ${invite.days} dias\n📅 **Vigência até:** ${formattedDate}\n\n🚀 Aproveite as melhores oportunidades do mercado!`
+                    : `👋 **Seja bem-vindo!**\n\n🎯 Seu acesso à **Fábrica de Super Odds** foi liberado com sucesso!\n\n⏳ **Período:** ${invite.days} dias\n📅 **Vigência até:** ${formattedDate}\n\n🚀 Aproveite as melhores oportunidades do mercado!`;
+
+                await ctx.replyWithMarkdown(welcomeMsg);
 
             } catch (error) {
                 console.error('Error processing invite:', error);
