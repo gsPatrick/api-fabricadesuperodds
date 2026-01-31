@@ -50,16 +50,31 @@ class TransactionService {
 
     async generateReport(user_id_telegram, startDate, endDate) {
         const transactions = await this.getTransactionsByUser(user_id_telegram, startDate, endDate);
-        const balance = await this.getBalance(user_id_telegram, startDate, endDate);
+        const totalBalance = await this.getBalance(user_id_telegram, startDate, endDate);
 
-        // Simple text format
-        let report = `Relatório (${startDate ? startDate.toISOString().split('T')[0] : 'Início'} - ${endDate ? endDate.toISOString().split('T')[0] : 'Agora'})\n`;
-        report += `--------------------------------------------------\n`;
-        transactions.forEach(t => {
-            report += `${t.date.toISOString().split('T')[0]} | ${t.type.toUpperCase()} | R$ ${t.amount} | ${t.description || ''}\n`;
-        });
-        report += `--------------------------------------------------\n`;
-        report += `Saldo Total no Período: R$ ${balance.toFixed(2)}`;
+        let report = `📅 **Resumo do Período**\n`;
+        report += `─────────────────────\n\n`;
+
+        if (transactions.length === 0) {
+            report += `*Nenhuma movimentação encontrada.*`;
+        } else {
+            transactions.forEach(t => {
+                const date = new Date(t.date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+                const emoji = t.amount < 0 ? '📉' : '📈';
+                const sign = t.amount < 0 ? '-' : '+';
+                const amount = Math.abs(t.amount).toFixed(2);
+
+                // Clean description (remove the "gastei" keyword if present, or just use as is)
+                let desc = t.description || '';
+                if (desc.length > 20) desc = desc.substring(0, 17) + '...';
+
+                report += `${emoji} **${date}** | ${sign}R$ ${amount}\n`;
+                report += `└ _${desc}_\n\n`;
+            });
+        }
+
+        report += `─────────────────────\n`;
+        report += `💰 **SALDO TOTAL: R$ ${totalBalance.toFixed(2)}**`;
 
         return report;
     }
