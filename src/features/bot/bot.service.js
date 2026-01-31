@@ -13,6 +13,25 @@ class BotService {
     }
 
     init() {
+        // Logging Middleware
+        this.bot.use(async (ctx, next) => {
+            const start = Date.now();
+            console.log(`--- Mensagem Recebida ---`);
+            console.log(`De: ${ctx.from?.first_name} (@${ctx.from?.username}) [${ctx.from?.id}]`);
+            console.log(`Texto: ${ctx.message?.text || '(Sem texto)'}`);
+
+            try {
+                await next();
+            } catch (err) {
+                console.error(`❌ Erro no processamento:`, err.message);
+                ctx.reply('Desculpe, ocorreu um erro interno.');
+            }
+
+            const ms = Date.now() - start;
+            console.log(`Processado em ${ms}ms`);
+            console.log(`-------------------------`);
+        });
+
         // Handle /start <token>
         this.bot.start(async (ctx) => {
             const payload = ctx.startPayload; // The parameter after /start
@@ -88,6 +107,50 @@ class BotService {
             } catch (error) {
                 console.error('Error processing invite:', error);
                 await ctx.reply('Ocorreu um erro ao processar seu convite. Tente novamente mais tarde.');
+            }
+        });
+
+        // Hear for transaction patterns (e.g., "gastei 50", "+100", "ganhei 30")
+        this.bot.on('text', async (ctx) => {
+            const text = ctx.message.text.toLowerCase();
+            const fromId = ctx.from.id;
+            console.log(`[Transaction] Analisando: "${text}" de ${fromId}`);
+
+            const match = text.match(/(?:(?:gastei|perdi|paguei|-)\s*(\d+(?:[.,]\d+)?))|(?:(?:ganhei|recebi|faturei|\+)\s*(\d+(?:[.,]\d+)?))/i);
+
+            if (match) {
+                const amountValue = (match[1] || match[2]).replace(',', '.');
+                const amount = parseFloat(amountValue);
+                const isExpense = !!match[1];
+                const type = isExpense ? 'perda' : 'ganho';
+                const finalAmount = isExpense ? -amount : amount;
+
+                console.log(`[Transaction] Detectado: ${amount} (${type})`);
+
+                try {
+                    const { User } = require('../../models');
+                    const TransactionService = require('../transaction/transaction.service');
+
+                    const user = await User.findOne({ where: { id_telegram: fromId } });
+
+                    if (!user || !user.allowed) {
+                        console.log(`[Transaction] Usuário ${fromId} não autorizado.`);
+                        return ctx.reply('⚠️ Você não tem permissão para registrar transações. Solicite acesso ao administrador.');
+                    }
+
+                    console.log(`[Transaction] Salvando no banco...`);
+                    await TransactionService.createTransaction(fromId, finalAmount, text, type);
+
+                    const newBalance = await TransactionService.getBalance(fromId);
+                    console.log(`[Transaction] Sucesso! Novo saldo: ${newBalance}`);
+
+                    ctx.reply(`✅ Registrado: R$ ${amount.toFixed(2)} (${isExpense ? 'Gasto' : 'Ganho'})\n💰 Novo Saldo: R$ ${newBalance.toFixed(2)}`);
+                } catch (error) {
+                    console.error(`[Transaction] Erro ao salvar:`, error.message);
+                    ctx.reply('❌ Erro ao salvar transação.');
+                }
+            } else {
+                console.log(`[Transaction] Nenhum padrão encontrado.`);
             }
         });
 
