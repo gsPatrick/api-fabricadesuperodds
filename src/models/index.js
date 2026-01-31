@@ -1,6 +1,4 @@
-const sequelize = require('../config/database');
-const User = require('./user');
-const Transaction = require('./transaction');
+const Invite = require('./invite')(sequelize);
 
 // Define associations
 User.hasMany(Transaction, { foreignKey: 'user_id_telegram', sourceKey: 'id_telegram' });
@@ -9,5 +7,6 @@ Transaction.belongsTo(User, { foreignKey: 'user_id_telegram', targetKey: 'id_tel
 module.exports = {
     sequelize,
     User,
-    Transaction
+    Transaction,
+    Invite
 };

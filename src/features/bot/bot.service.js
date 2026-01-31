@@ -48,11 +48,14 @@ class BotService {
 
                 // Create or Update User
                 // Use upsert-like logic
+                // Create or Update User
+                // Use upsert-like logic
                 let user = await User.findOne({ where: { id_telegram: fromId } });
                 if (!user) {
                     user = await User.create({
                         id_telegram: fromId,
                         username: username,
+                        name: invite.name, // Use name from invite
                         allowed: true,
                         start_date: now,
                         end_date: endDate
@@ -62,6 +65,7 @@ class BotService {
                     user.start_date = now;
                     user.end_date = endDate;
                     if (username) user.username = username;
+                    if (invite.name) user.name = invite.name; // Update name if provided
                     await user.save();
                 }
 
@@ -69,7 +73,11 @@ class BotService {
                 invite.used = true;
                 await invite.save();
 
-                await ctx.reply(`🎉 Parabéns! Seu acesso foi liberado com sucesso por ${invite.days} dias.\n\nVigência até: ${endDate.toLocaleDateString()}`);
+                const welcomeMsg = invite.name
+                    ? `🎉 Olá ${invite.name}! Seu acesso foi liberado com sucesso por ${invite.days} dias.\n\nVigência até: ${endDate.toLocaleDateString()}`
+                    : `🎉 Parabéns! Seu acesso foi liberado com sucesso por ${invite.days} dias.\n\nVigência até: ${endDate.toLocaleDateString()}`;
+
+                await ctx.reply(welcomeMsg);
 
             } catch (error) {
                 console.error('Error processing invite:', error);
