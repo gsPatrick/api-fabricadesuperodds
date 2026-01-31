@@ -9,6 +9,7 @@ router.post('/login', UserController.login);
 router.get('/analytics', UserController.getAnalytics);
 router.get('/', UserController.listUsers);
 router.post('/allow', UserController.allowUser);
+router.post('/invite', UserController.createInvite);
 router.post('/revoke', UserController.revokeUser);
 router.delete('/remove', UserController.removeUser); // Or POST /remove if preferred
 

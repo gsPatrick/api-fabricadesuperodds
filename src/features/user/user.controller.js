@@ -45,6 +45,30 @@ class UserController {
         }
     }
 
+    async createInvite(req, res) {
+        try {
+            const { days = 30 } = req.body;
+            const { Invite } = require('../../models');
+
+            const expiresAt = new Date();
+            expiresAt.setHours(expiresAt.getHours() + 24); // Token valid for 24h
+
+            const invite = await Invite.create({
+                days,
+                expires_at: expiresAt
+            });
+
+            // Construct Link
+            const botUser = process.env.BOT_USERNAME || 'FabricaSuperOddsBot';
+            const link = `https://t.me/${botUser}?start=${invite.token}`;
+
+            res.json({ link, token: invite.token, expires_at: expiresAt });
+        } catch (error) {
+            console.error(error);
+            res.status(500).json({ error: "Failed to generate invite link" });
+        }
+    }
+
     async revokeUser(req, res) {
         try {
             const { id_telegramOrUsername } = req.body;
