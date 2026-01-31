@@ -16,6 +16,13 @@ app.use(express.static(path.join(__dirname, 'public'))); // Serve static files f
 // Routes
 app.use('/api', routes);
 
+// Telegram Webhook Endpoint
+const BotService = require('./src/features/bot/bot.service');
+if (BotService.bot) {
+    app.use(BotService.getWebhookCallback());
+    console.log('🚀 Bot Webhook registered at /api/bot-webhook');
+}
+
 // Database Connection & Server Start
 async function startServer() {
     try {

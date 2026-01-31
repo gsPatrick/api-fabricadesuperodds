@@ -91,33 +91,23 @@ class BotService {
             }
         });
 
-        // Launch bot (polling) with a longer delay to ensure old server containers are DEAD
-        console.log('Bot preparing to launch in 15 seconds (Waiting for Easypanel to cycle)...');
-        setTimeout(async () => {
-            const tryLaunch = async (retries = 3) => {
-                try {
-                    console.log('Bot attempting to connect to Telegram...');
-                    await this.bot.telegram.deleteWebhook();
-                    await this.bot.launch({
-                        allowedUpdates: [],
-                        dropPendingUpdates: true
-                    });
-                    console.log('✅ Bot is polling for updates (Drop Pending Updates: ON)');
-                } catch (err) {
-                    if (err.response && err.response.error_code === 409 && retries > 0) {
-                        console.warn(`⚠️ Erro 409 detectado. Tentando novamente em 10s... (Restam ${retries} tentativas)`);
-                        setTimeout(() => tryLaunch(retries - 1), 10000);
-                    } else {
-                        console.error('❌ Bot launch failed permanently:', err.message);
-                    }
-                }
-            };
-            tryLaunch();
-        }, 15000); // 15 second safety delay for Easypanel/Docker rotation
+        // Webhook configuration (Easypanel optimized)
+        const WEBHOOK_PATH = '/api/bot-webhook';
+        const WEBHOOK_URL = `https://geral-fabricadesuperodssapi.r954jc.easypanel.host${WEBHOOK_PATH}`;
+
+        this.bot.telegram.setWebhook(WEBHOOK_URL).then(() => {
+            console.log(`✅ Webhook set to: ${WEBHOOK_URL}`);
+        }).catch(err => {
+            console.error('❌ Failed to set webhook:', err.message);
+        });
 
         // Graceful stop
         process.once('SIGINT', () => this.bot.stop('SIGINT'));
         process.once('SIGTERM', () => this.bot.stop('SIGTERM'));
+    }
+
+    getWebhookCallback() {
+        return this.bot.webhookCallback('/api/bot-webhook');
     }
 
     async sendNotification(userId, message) {
