@@ -64,7 +64,7 @@ class TransactionService {
                 const sign = t.amount < 0 ? '-' : '+';
                 const amount = Math.abs(t.amount).toFixed(2);
 
-                // Clean description (remove the "gastei" keyword if present, or just use as is)
+                // Clean description (remove the "perdi" keyword if present, or just use as is)
                 let desc = t.description || '';
                 if (desc.length > 20) desc = desc.substring(0, 17) + '...';
 

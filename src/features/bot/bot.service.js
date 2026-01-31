@@ -95,7 +95,7 @@ class BotService {
         this.bot.hears([/📝 Como Registrar\?/i, /^\/ajuda$/i, /^ajuda$/i], (ctx) => {
             const helpMsg = `📖 **Guia de Comandos**\n\n` +
                 `✅ **Registrar Ganho:**\n"ganhei 100", "+50", "recebi 30", "lucro 10"\n\n` +
-                `❌ **Registrar Gasto:**\n"gastei 50", "-20", "perdi 10", "paguei 80", "despesa 15"\n\n` +
+                `❌ **Registrar Perda:**\n"perdi 50", "-20", "perdi 10", "paguei 80", "despesa 15"\n\n` +
                 `💰 **Consultar Saldo:** Clique no botão de saldo ou digite **saldo**\n\n` +
                 `📊 **Relatório:** Clique no botão de relatório ou digite **relatorio**`;
             ctx.replyWithMarkdown(helpMsg, this.getMainMenu());
@@ -155,7 +155,7 @@ class BotService {
             const fromId = ctx.from.id;
 
             // Regex for transactions
-            const match = text.match(/(?:(?:gastei|perdi|paguei|perda|despesa|-)\s*(\d+(?:[.,]\d+)?))|(?:(?:ganhei|recebi|faturei|lucro|ganho|\+)\s*(\d+(?:[.,]\d+)?))/i);
+            const match = text.match(/(?:(?:perdi|paguei|perda|despesa|-)\s*(\d+(?:[.,]\d+)?))|(?:(?:ganhei|recebi|faturei|lucro|ganho|\+)\s*(\d+(?:[.,]\d+)?))/i);
 
             if (match) {
                 const amountValue = (match[1] || match[2]).replace(',', '.');
@@ -192,7 +192,7 @@ class BotService {
                 }
             } else {
                 // Fallback for unrecognized text
-                ctx.reply('🤔 Não entendi. Use os botões do teclado ou digite algo como "gastei 50" ou "saldo".', this.getMainMenu());
+                ctx.reply('🤔 Não entendi. Use os botões do teclado ou digite algo como "perdi 50" ou "saldo".', this.getMainMenu());
             }
         });
 
