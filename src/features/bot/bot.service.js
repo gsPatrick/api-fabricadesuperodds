@@ -1,4 +1,5 @@
-const { Telegraf } = require('telegraf');
+```javascript
+const { Telegraf, Markup } = require('telegraf');
 require('dotenv').config();
 
 class BotService {
@@ -12,111 +13,150 @@ class BotService {
         }
     }
 
+    // Professional Main Menu
+    getMainMenu() {
+        return Markup.keyboard([
+            ['💰 Meu Saldo', '📊 Relatório Mensal'],
+            ['📝 Como Registrar?']
+        ]).resize();
+    }
+
     init() {
         // Logging Middleware
         this.bot.use(async (ctx, next) => {
             const start = Date.now();
-            console.log(`--- Mensagem Recebida ---`);
-            console.log(`De: ${ctx.from?.first_name} (@${ctx.from?.username}) [${ctx.from?.id}]`);
-            console.log(`Texto: ${ctx.message?.text || '(Sem texto)'}`);
-
+            console.log(`-- - Mensagem Recebida-- - `);
+            console.log(`De: ${ ctx.from?.first_name } (@${ ctx.from?.username })[${ ctx.from?.id }]`);
+            console.log(`Texto: ${ ctx.message?.text || '(Sem texto)' } `);
+            
             try {
                 await next();
             } catch (err) {
-                console.error(`❌ Erro no processamento:`, err.message);
+                console.error(`❌ Erro no processamento: `, err.message);
                 ctx.reply('Desculpe, ocorreu um erro interno.');
             }
-
+            
             const ms = Date.now() - start;
-            console.log(`Processado em ${ms}ms`);
-            console.log(`-------------------------`);
+            console.log(`Processado em ${ ms } ms`);
+            console.log(`------------------------- `);
         });
 
         // Handle /start <token>
         this.bot.start(async (ctx) => {
-            const payload = ctx.startPayload; // The parameter after /start
+            const payload = ctx.startPayload;
             const fromId = ctx.from.id;
             const username = ctx.from.username;
 
             if (!payload) {
+                // If user already exists and is allowed, just show menu
+                const { User } = require('../../models');
+                const user = await User.findOne({ where: { id_telegram: fromId } });
+                if (user && user.allowed) {
+                    return ctx.reply('Bem-vindo de volta! Use o menu abaixo para navegar.', this.getMainMenu());
+                }
                 return ctx.reply('Olá! Este bot é privado. Para acessar, você precisa de um link de convite válido.');
             }
 
             try {
-                // Circular dependency workaround or require inside method
                 const { Invite, User } = require('../../models');
-
                 const invite = await Invite.findByPk(payload);
 
-                if (!invite) {
-                    return ctx.reply('❌ Link de convite inválido.');
+                if (!invite || invite.used || new Date() > new Date(invite.expires_at)) {
+                    return ctx.reply('❌ Link de convite inválido ou expirado.');
                 }
 
-                if (invite.used) {
-                    return ctx.reply('⚠️ Este link de convite já foi utilizado.');
-                }
-
-                if (new Date() > new Date(invite.expires_at)) {
-                    return ctx.reply('❌ Este link de convite expirou.');
-                }
-
-                // Activate User
                 const now = new Date();
                 const endDate = new Date();
                 endDate.setDate(now.getDate() + invite.days);
 
-                // Create or Update User
-                // Use upsert-like logic
-                // Create or Update User
-                // Use upsert-like logic
-                let user = await User.findOne({ where: { id_telegram: fromId } });
-                if (!user) {
-                    user = await User.create({
-                        id_telegram: fromId,
-                        username: username,
-                        name: invite.name, // Use name from invite
-                        allowed: true,
-                        start_date: now,
-                        end_date: endDate
-                    });
-                } else {
-                    user.allowed = true;
-                    user.start_date = now;
-                    user.end_date = endDate;
-                    if (username) user.username = username;
-                    if (invite.name) user.name = invite.name; // Update name if provided
-                    await user.save();
-                }
+                await User.upsert({
+                    id_telegram: fromId,
+                    username: username,
+                    name: invite.name,
+                    allowed: true,
+                    start_date: now,
+                    end_date: endDate
+                });
 
-                // Mark invite as used
                 invite.used = true;
                 await invite.save();
 
-                const formattedDate = endDate.toLocaleDateString('pt-BR', {
-                    day: '2-digit',
-                    month: '2-digit',
-                    year: 'numeric'
-                });
+                const formattedDate = endDate.toLocaleDateString('pt-BR');
+                const welcomeMsg = `🎯 ** Acesso Liberado! **\n\nOlá ${ invite.name || '' }, seu acesso à ** Fábrica de Super Odds ** está ativo até ${ formattedDate }.\n\nPara começar, basta digitar seus ganhos ou gastos: \nEx: "ganhei 100" ou "paguei 50"`;
 
-                const welcomeMsg = invite.name
-                    ? `👋 **Olá, ${invite.name}!**\n\n🎯 Seu acesso à **Fábrica de Super Odds** foi liberado com sucesso!\n\n⏳ **Período:** ${invite.days} dias\n📅 **Vigência até:** ${formattedDate}\n\n🚀 Aproveite as melhores oportunidades do mercado!`
-                    : `👋 **Seja bem-vindo!**\n\n🎯 Seu acesso à **Fábrica de Super Odds** foi liberado com sucesso!\n\n⏳ **Período:** ${invite.days} dias\n📅 **Vigência até:** ${formattedDate}\n\n🚀 Aproveite as melhores oportunidades do mercado!`;
-
-                await ctx.replyWithMarkdown(welcomeMsg);
+                await ctx.replyWithMarkdown(welcomeMsg, this.getMainMenu());
 
             } catch (error) {
                 console.error('Error processing invite:', error);
-                await ctx.reply('Ocorreu um erro ao processar seu convite. Tente novamente mais tarde.');
+                await ctx.reply('Erro ao processar convite.');
             }
         });
 
-        // Hear for transaction patterns (e.g., "gastei 50", "+100", "ganhei 30")
+        // Command: Help / Instructions
+        this.bot.hears(['📝 Como Registrar?', '/ajuda'], (ctx) => {
+            const helpMsg = `📖 ** Guia de Comandos **\n\n` +
+                `✅ ** Registrar Ganho:**\n"ganhei 100", "+50", "recebi 30"\n\n` +
+                `❌ ** Registrar Gasto:**\n"gastei 50", "-20", "perdi 10"\n\n` +
+                `💰 ** Consultar Saldo:** Clique no botão de saldo ou digite / saldo\n\n` +
+                `📊 ** Relatório:** Clique no botão de relatório ou digite / relatorio`;
+            ctx.replyWithMarkdown(helpMsg);
+        });
+
+        // Command: Balance
+        this.bot.hears(['💰 Meu Saldo', '/saldo', 'saldo'], async (ctx) => {
+            const fromId = ctx.from.id;
+            try {
+                const TransactionService = require('../transaction/transaction.service');
+                const balance = await TransactionService.getBalance(fromId);
+                
+                const balanceMsg = `🏦 ** Extrato Atual **\n\n` +
+                    `💰 ** Saldo Geral:** R$ ${ balance.toFixed(2) } \n\n` +
+                    `* Status: Em dia ✅* `;
+                
+                ctx.replyWithMarkdown(balanceMsg, Markup.inlineKeyboard([
+                    [Markup.button.callback('📊 Ver Relatório Mensal', 'get_report')]
+                ]));
+            } catch (error) {
+                ctx.reply('Erro ao consultar saldo.');
+            }
+        });
+
+        // Command: Monthly Report
+        this.bot.hears(['📊 Relatório Mensal', '/relatorio', 'relatorio'], async (ctx) => {
+            const fromId = ctx.from.id;
+            try {
+                const TransactionService = require('../transaction/transaction.service');
+                const now = new Date();
+                const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+                
+                const report = await TransactionService.generateReport(fromId, startOfMonth, now);
+                
+                const reportMsg = `📊 ** Relatório do Mês(${ now.toLocaleString('pt-BR', { month: 'long' }) }) **\n\n${ report } \n\n * Relatório gerado em ${ now.toLocaleString('pt-BR') }* `;
+                
+                ctx.replyWithMarkdown(reportMsg);
+            } catch (error) {
+                ctx.reply('Erro ao gerar relatório.');
+            }
+        });
+
+        // Action: Inline Report Callback
+        this.bot.action('get_report', async (ctx) => {
+            ctx.answerCbQuery();
+            const fromId = ctx.from.id;
+            const TransactionService = require('../transaction/transaction.service');
+            const now = new Date();
+            const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+            const report = await TransactionService.generateReport(fromId, startOfMonth, now);
+            ctx.replyWithMarkdown(`📊 ** Relatório Mensal **\n\n${ report } `);
+        });
+
+        // General Text Handling (Transactions)
         this.bot.on('text', async (ctx) => {
             const text = ctx.message.text.toLowerCase();
             const fromId = ctx.from.id;
-            console.log(`[Transaction] Analisando: "${text}" de ${fromId}`);
 
-            const match = text.match(/(?:(?:gastei|perdi|paguei|-)\s*(\d+(?:[.,]\d+)?))|(?:(?:ganhei|recebi|faturei|\+)\s*(\d+(?:[.,]\d+)?))/i);
+            // Regex for transactions
+            const match = text.match(/(?:(?:gastei|perdi|paguei|perda|despesa|-)\s*(\d+(?:[.,]\d+)?))|(?:(?:ganhei|recebi|faturei|lucro|ganho|\+)\s*(\d+(?:[.,]\d+)?))/i);
 
             if (match) {
                 const amountValue = (match[1] || match[2]).replace(',', '.');
@@ -125,82 +165,63 @@ class BotService {
                 const type = isExpense ? 'perda' : 'ganho';
                 const finalAmount = isExpense ? -amount : amount;
 
-                console.log(`[Transaction] Detectado: ${amount} (${type})`);
-
                 try {
                     const { User } = require('../../models');
                     const TransactionService = require('../transaction/transaction.service');
 
                     const user = await User.findOne({ where: { id_telegram: fromId } });
+                    if (!user || !user.allowed) return ctx.reply('⚠️ Acesso não autorizado.');
 
-                    if (!user || !user.allowed) {
-                        console.log(`[Transaction] Usuário ${fromId} não autorizado.`);
-                        return ctx.reply('⚠️ Você não tem permissão para registrar transações. Solicite acesso ao administrador.');
-                    }
-
-                    console.log(`[Transaction] Salvando no banco...`);
                     await TransactionService.createTransaction(fromId, finalAmount, text, type);
+                    const newBalance = await TransactionService.getBalance(fromId);
 
-                    console.log(`[Transaction] Sucesso! Novo saldo: ${newBalance}`);
+                    const dateStr = new Date().toLocaleDateString('pt-BR');
+                    const timeStr = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
-                    const now = new Date();
-                    const dateStr = now.toLocaleDateString('pt-BR');
-                    const timeStr = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+                    const responseMsg = (isExpense ? '📉 **Gasto Registrado**' : '📈 **Ganho Registrado**') +
+                        `\n\n💰 ** Valor:** ${ isExpense ? '-' : '+' }R$ ${ amount.toFixed(2) } \n` +
+                        `📝 ** Descrição:** ${ text } \n` +
+                        `⏰ ** Horário:** ${ dateStr } às ${ timeStr } \n\n` +
+                        `🏦 ** Saldo Atual:** R$ ${ newBalance.toFixed(2) } `;
 
-                    const responseMsg = isExpense
-                        ? `📉 **Gasto Registrado**\n\n` +
-                        `💰 **Valor:** -R$ ${amount.toFixed(2)}\n` +
-                        `📝 **Descrição:** ${text}\n` +
-                        `⏰ **Horário:** ${dateStr} às ${timeStr}\n\n` +
-                        `🏦 **Saldo Atual:** R$ ${newBalance.toFixed(2)}\n\n` +
-                        `*🚀 Fábrica de Super Odds*`
-                        : `📈 **Ganho Registrado**\n\n` +
-                        `💰 **Valor:** +R$ ${amount.toFixed(2)}\n` +
-                        `📝 **Descrição:** ${text}\n` +
-                        `⏰ **Horário:** ${dateStr} às ${timeStr}\n\n` +
-                        `🏦 **Saldo Atual:** R$ ${newBalance.toFixed(2)}\n\n` +
-                        `*🚀 Fábrica de Super Odds*`;
-
-                    ctx.replyWithMarkdown(responseMsg);
+                    ctx.replyWithMarkdown(responseMsg, Markup.inlineKeyboard([
+                        [Markup.button.callback('� Ver Relatório', 'get_report')]
+                    ]));
                 } catch (error) {
-                    console.error(`[Transaction] Erro ao salvar:`, error.message);
+                    console.error('Save error:', error.message);
                     ctx.reply('❌ Erro ao salvar transação.');
                 }
-            } else {
-                console.log(`[Transaction] Nenhum padrão encontrado.`);
             }
         });
 
-        // Webhook configuration (Easypanel optimized)
+        // Webhook configuration
         const WEBHOOK_PATH = '/api/bot-webhook';
         const WEBHOOK_URL = `https://geral-fabricadesuperodssapi.r954jc.easypanel.host${WEBHOOK_PATH}`;
 
-        this.bot.telegram.setWebhook(WEBHOOK_URL).then(() => {
-            console.log(`✅ Webhook set to: ${WEBHOOK_URL}`);
-        }).catch(err => {
-            console.error('❌ Failed to set webhook:', err.message);
-        });
+this.bot.telegram.setWebhook(WEBHOOK_URL).then(() => {
+    console.log(`✅ Webhook set to: ${WEBHOOK_URL}`);
+}).catch(err => console.error('❌ Failed to set webhook:', err.message));
 
-        // Graceful stop
-        process.once('SIGINT', () => this.bot.stop('SIGINT'));
-        process.once('SIGTERM', () => this.bot.stop('SIGTERM'));
+// Graceful stop
+process.once('SIGINT', () => this.bot.stop('SIGINT'));
+process.once('SIGTERM', () => this.bot.stop('SIGTERM'));
     }
 
-    getWebhookCallback() {
-        return this.bot.webhookCallback('/api/bot-webhook');
-    }
+getWebhookCallback() {
+    return this.bot.webhookCallback('/api/bot-webhook');
+}
 
     async sendNotification(userId, message) {
-        if (!this.bot) return false;
-        try {
-            await this.bot.telegram.sendMessage(userId, message);
-            return true;
-        } catch (error) {
-            console.error(`Failed to send notification to ${userId}:`, error.message);
-            // Common error: "Forbidden: bot was blocked by the user" or "chat not found"
-            return false;
-        }
+    if (!this.bot) return false;
+    try {
+        await this.bot.telegram.sendMessage(userId, message, { parse_mode: 'Markdown' });
+        return true;
+    } catch (error) {
+        console.error(`Failed to send notification to ${userId}:`, error.message);
+        return false;
     }
+}
 }
 
 module.exports = new BotService();
+```
