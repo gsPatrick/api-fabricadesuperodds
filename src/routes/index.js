@@ -24,12 +24,9 @@ const adminAuth = (req, res, next) => {
 // Mount routes
 // Admin Routes (protected)
 router.use('/admin/users', adminAuth, userRoutes);
+router.use('/admin/transactions', adminAuth, transactionRoutes);
 
 // Bot Routes (transaction logic)
-// Should these be protected? The Bot should probably send a secret too.
-// For now, I'll leave them open or assume the bot is internal/trusted, but adding a rudimentary check is wise.
-// The prompt didn't strictly ask for Bot API auth, but "Implemente um sistema de autenticação básico para... painel de administração".
-// I'll keep Bot routes open for simplicity as per requirements focus, but adding a note.
 router.use('/bot/transactions', transactionRoutes);
 
 module.exports = router;
